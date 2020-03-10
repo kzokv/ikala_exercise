@@ -7,14 +7,16 @@
   - Copy the secret key
 - Run below maven command
   ```
-  mvn clean test -DsuiteXmlFile=<xml file> -Demail=<your email> -Dpassword=<your password> -DsecretGoogleAuthKey=<secret key>
+  mvn clean test -DsuiteXmlFile=<xml file> -Demail=<your email> -Dpassword=<your password> -DsecretGoogleAuthKey=<secret key> -Dthreadcount=<threadcount>
   
   e.g.
-  mvn clean test -DsuiteXmlFile=ikala.xml -Demail=****@xxx.com -Dpassword=****** "-DsecretGoogleAuthKey=5yz5 qibs y7dv qggn 2oov 5ikz repc xo7e"
+  mvn clean test -DsuiteXmlFile=ikala.xml -Demail=****@xxx.com -Dpassword=****** "-DsecretGoogleAuthKey=5yz5 qibs y7dv qggn 2oov 5ikz repc xo7e" -Dthreadcount=2
   
   note: it doesn't matter that your secretGoogleAuthKey contains spaces
   ```
-- Recording:  
-  ![clip](./src/main/resources/ikala_exercise.gif)
+- Recording - single thread:  
+  ![clip](./src/main/resources/ikala_exercise_singleThread.gif)
 
+- Recording - multi threads:  
+  ![clip](./src/main/resources/ikala_exercise_multiThreads.gif)
 

@@ -2,7 +2,6 @@ package org.ikala;
 
 import org.ikala.helper.ApplicationContextProvider;
 import org.ikala.helper.ContextDataProtoTypeHolder;
-import org.ikala.helper.ContextHelper;
 import org.ikala.helper.IkalaBeans;
 import org.ikala.manager.MavenArgsManager;
 import org.ikala.pageobject.LoginPage;
@@ -23,17 +22,15 @@ import java.io.File;
 
 
 public class Exercise {
-    private final String XPATH_QUERY_NEXT = "//span[@class=\"RveJvd snByac\"]";
-
-    private WebDriver webDriver;
+    private ThreadLocal<WebDriver> webDriverThreadLocal = new ThreadLocal<>();
     private MavenArgsManager mavenArgsManager;
 
-    private LoginPage loginPage;
-    private MainPage mainPage;
+    private ThreadLocal<LoginPage> loginPageThreadLocal = new ThreadLocal<>();
+
+    private final String GOOGLE_LOGIN_URL = "https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin&hl=en";
 
     @BeforeMethod
     public void setup(ITestContext iTestContext) {
-
 
         //Init spring beans
         new AnnotationConfigApplicationContext(IkalaBeans.class);
@@ -41,7 +38,6 @@ public class Exercise {
         ContextDataProtoTypeHolder contextDataProtoTypeHolder = ApplicationContextProvider.getApplicationContext().getBean(ContextDataProtoTypeHolder.class);
         //Set this object for future usage
 
-        ContextHelper.setContextDataProtoTypeHolder(contextDataProtoTypeHolder);
         //maven argument manager
         mavenArgsManager = contextDataProtoTypeHolder.getMavenArgsManager();
 
@@ -52,30 +48,47 @@ public class Exercise {
         WebDriver localWebDriver = new ChromeDriver();
 
         //Register local webDriver to EventFiringWebDriver
-        webDriver = new EventFiringWebDriver(localWebDriver);
-        ((EventFiringWebDriver) webDriver).register(new WebDriverEventHandler());
+        webDriverThreadLocal.set(new EventFiringWebDriver(localWebDriver));
+        ((EventFiringWebDriver) webDriverThreadLocal.get()).register(new WebDriverEventHandler());
 
-        loginPage = (LoginPage) contextDataProtoTypeHolder.getPageObjectManager().getLoginPage().setWebDriverThreadLocal(webDriver);
+        loginPageThreadLocal.set((LoginPage) contextDataProtoTypeHolder.getPageObjectManager().getLoginPage().setWebDriverThreadLocal(webDriverThreadLocal.get()));
     }
 
     @Test
-    public void testLoginGoogle() throws InterruptedException {
+    public void testLoginGoogleValidTotp() throws InterruptedException {
 
-        mainPage = (MainPage) loginPage.openUrl("https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin&hl=en") //go to google account login page
+        MainPage mainPage = (MainPage) loginPageThreadLocal.get().openUrl(GOOGLE_LOGIN_URL) //go to google account login page
                 .inputEmail(mavenArgsManager.getEmail())  //enter email
-                .clickNextButton(loginPage)  //click next button
+                .clickNextButton(loginPageThreadLocal.get())  //click next button
                 .inputPassword(mavenArgsManager.getPassword()) // input password
-                .clickNextButton(loginPage) //click next button
+                .clickNextButton(loginPageThreadLocal.get()) //click next button
                 .untickCheckBoxDontAskAgain()  //untick do-not-ask-again checkbox
                 .inputTotpAndClickNextButton(mavenArgsManager.getSecretGoogleAuthKey()); //enter Totp key
 
-        //assertion
-        Assert.assertEquals(mainPage.getWelcomeMessage(), "Welcome, Keith Chuang");
+        //assert that WelcomeMessage element is present
+        Assert.assertTrue(mainPage.getpWebElementWelcomeMessage().isDisplayed());
+
+    }
+
+    @Test
+    public void testLoginGoogleInvalidTotp() {
+
+        loginPageThreadLocal.get().openUrl(GOOGLE_LOGIN_URL) //go to google account login page
+                .inputEmail(mavenArgsManager.getEmail())  //enter email
+                .clickNextButton(loginPageThreadLocal.get())  //click next button
+                .inputPassword(mavenArgsManager.getPassword()) // input password
+                .clickNextButton(loginPageThreadLocal.get()) //click next button
+                .untickCheckBoxDontAskAgain()  //untick do-not-ask-again checkbox
+                .inputTotpAndClickNextButton(mavenArgsManager.getSecretGoogleAuthKey(),55); //enter Totp key
+
+        //assert that message Wrong code is present for both weblement and its text.
+        Assert.assertTrue(loginPageThreadLocal.get().getDivTotpMessage().isDisplayed());
+        Assert.assertEquals(loginPageThreadLocal.get().getDivTotpMessage().getText(),"Wrong code. Try again.");
 
     }
 
     @AfterMethod
     public void tearDown() {
-        webDriver.quit();
+        webDriverThreadLocal.get().quit();
     }
 }

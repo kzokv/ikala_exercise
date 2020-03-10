@@ -8,10 +8,12 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.How;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 
 @Service
+@Scope("prototype")
 public class LoginPage extends BasePage {
 
     @Autowired
@@ -32,7 +34,10 @@ public class LoginPage extends BasePage {
     @FindBy(how = How.XPATH, using = "//div[@class=\"uVccjd iK47pf N2RpBe\"]")
     private WebElement checkBoxDontAskAgain;
 
-    private GoogleAuthenticator gAuth = new GoogleAuthenticator();;
+    @FindBy(how = How.XPATH, using = "//div[@class=\"o6cuMc\"]")
+    private WebElement divTotpMessage;
+
+    private GoogleAuthenticator gAuth = new GoogleAuthenticator();
 
     public LoginPage() {
         super();
@@ -63,7 +68,7 @@ public class LoginPage extends BasePage {
         WaitUtils.waitUntilVisibilityOf(getWebDriver(), checkBoxDontAskAgain);
         if (checkBoxDontAskAgain.getAttribute("aria-checked").equals("true")) {
             //ElementClickInterceptedException is thrown by webelement click function.
-            //checkBoxDontAskAgain.click();
+            //clickWebElementToPage(this, checkBoxDontAskAgain);
 
             //Use JS to click the element instead.
             ((JavascriptExecutor) getWebDriver()).executeScript("arguments[0].click();", checkBoxDontAskAgain);
@@ -93,5 +98,26 @@ public class LoginPage extends BasePage {
             }
         }
         return mainPage;
+    }
+
+    public BasePage inputTotpAndClickNextButton(String secretKey, int numAddedToTotpCode) {
+        //Get google authenticator code
+        int code = gAuth.getTotpPassword(secretKey);
+        //clear out the text
+        inputFieldTotp.clear();
+        //input code in totpPin field
+        System.out.printf("Original generated totp code: %06d\n", code);
+        System.out.printf("Entered totp code: %06d\n", code+numAddedToTotpCode);
+        inputFieldTotp.sendKeys(String.format("%06d", code+numAddedToTotpCode));
+        //click next button
+        clickNextButton(this);
+        WaitUtils.waitUntilVisibilityOf(getWebDriver(), divTotpMessage);
+        return this;
+    }
+
+    //getter methods for web-elements
+
+    public WebElement getDivTotpMessage() {
+        return divTotpMessage;
     }
 }

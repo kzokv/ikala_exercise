@@ -17,15 +17,15 @@ public class WaitUtils {
         return isPageLoaded;
     };
 
-    private static WebDriverWait webDriverWait;
-    private static long timeoutInSeconds;
-    private static long sleepInMillis;
-    private final static long DEFAULT_TIMEOUT_IN_SECONDS = 10;
-    private final static long DEFAULT_SLEEP_IN_MILLIS = 200;
+    private static ThreadLocal<WebDriverWait> webDriverWaitThreadLocal = new ThreadLocal<>();
+    private static ThreadLocal<Long> timeoutInSeconds = new ThreadLocal<>();
+    private static ThreadLocal<Long> sleepInMillis = new ThreadLocal<>();
+    private final static long DEFAULT_TIMEOUT_IN_SECONDS = 15;
+    private final static long DEFAULT_SLEEP_IN_MILLIS = 1000;
 
     public static WebElement waitUntilVisibilityOf(WebDriver webDriver, WebElement webElement) {
         setWebDriverWait(webDriver);
-        return webDriverWait.until(ExpectedConditions.visibilityOf(webElement));
+        return getWebDriverWait().until(ExpectedConditions.visibilityOf(webElement));
     }
 
     public static void waitUntilPageLoadComplete(WebDriver webDriver){
@@ -34,19 +34,23 @@ public class WaitUtils {
 
     private static void untilWaitCondition(WebDriver webDriver, Function<WebDriver, Boolean> waitCondition) throws NotFoundException {
         setWebDriverWait(webDriver);
-        webDriverWait.until(waitCondition);
+        getWebDriverWait().until(waitCondition);
+    }
+
+    public static WebDriverWait getWebDriverWait() {
+        return webDriverWaitThreadLocal.get();
     }
 
     private static void setWebDriverWait(WebDriver webDriver) {
-        if (timeoutInSeconds == 0 || sleepInMillis == 0) {
+        if (timeoutInSeconds.get() == null || sleepInMillis.get() == null) {
             resetSettingsForTimeoutAndSleep();
         }
-        webDriverWait = new WebDriverWait(webDriver, timeoutInSeconds, sleepInMillis);
+        webDriverWaitThreadLocal.set(new WebDriverWait(webDriver, timeoutInSeconds.get(), sleepInMillis.get()));
     }
 
     public static void resetSettingsForTimeoutAndSleep() {
-        timeoutInSeconds = DEFAULT_TIMEOUT_IN_SECONDS;
-        sleepInMillis = DEFAULT_SLEEP_IN_MILLIS;
+        timeoutInSeconds.set(DEFAULT_TIMEOUT_IN_SECONDS);
+        sleepInMillis.set(DEFAULT_SLEEP_IN_MILLIS);
     }
 
 }
