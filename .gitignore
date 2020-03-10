@@ -1,0 +1,26 @@
+# Package Files #
+#*.jar
+*.war
+*.ear
+
+*.class
+
+nb-configuration.xml
+.checkstyle
+.classpath
+.project
+.settings/
+.springBeans
+**/target/**
+**/target-ant/**
+**/WEB-INF/classes/**
+**/.externalToolBuilders/
+work/
+*.sublime-workspace
+
+.idea/*
+*.iml
+
+!*.exe
+/target
+/.idea
