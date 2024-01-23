@@ -23,7 +23,7 @@
         <testng.version>7.1.0</testng.version>
         <selenium.version>3.141.59</selenium.version>
         <googleauth.totp.version>1.4.0</googleauth.totp.version>
-        <spring.version>5.0.8.RELEASE</spring.version>
+        <spring.version>6.0.15</spring.version>
     </properties>
 
 
